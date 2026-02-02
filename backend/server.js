@@ -15,6 +15,9 @@ app.get('/', (req, res) => {
   res.status(200).send('Server is running...');
 });
 
+import chatRouter from './src/routers/chat.router.js';
+app.use('/api', chatRouter);
+
 app.listen(PORT, () => {
   console.log(`Server is running on http://localhost:${PORT}`);
 });

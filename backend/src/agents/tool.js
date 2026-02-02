@@ -2,9 +2,27 @@ export const tools = [
   {
     type: "function",
     function: {
+      name: "webSearch",
+      description:
+        "Use this tool to search the internet for external information. Useful when the internal knowledge base does not have the answer.",
+      parameters: {
+        type: "object",
+        properties: {
+          query: {
+            type: "string",
+            description: "The search query string for the web search.",
+          },
+        },
+        required: ["query"],
+      },
+    },
+  },
+  {
+    type: "function",
+    function: {
       name: "searchKnowledgeBase",
       description:
-        "Use this tool to search the knowledge base for articles related to customer queries. Input should be a search query string. Output will be a list of relevant articles.",
+        "Use this tool to search the internal knowledge base (PDFs, docs) for customer-specific information. Input should be a search query string.",
       parameters: {
         type: "object",
         properties: {
