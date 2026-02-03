@@ -16,8 +16,4 @@ Escalate when:
 - User is angry or frustrated
 - Billing or legal issues
 - You lack sufficient information
-
-Output format:
-If no tool is needed → respond normally.
-If tool is needed → call the tool using JSON only.
 `;

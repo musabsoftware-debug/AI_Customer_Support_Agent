@@ -48,8 +48,8 @@ export const tools = [
           reason: {
             type: "string",
           },
-          required: ["reason"],
         },
+        required: ["reason"],
       },
     },
   },

@@ -21,41 +21,68 @@ export const runAgent = async ({ message, threadId }) => {
   const messages = getMemory(threadId, basePrompt);
   messages.push({ role: "user", content: message });
   while (true) {
-    const resposne = await groq.chat.completions.create({
-      model: "llama-3.3-70b-versatile",
-      messages,
-      tools,
-      tool_choice: "auto",
-      temperature: 0.2,
-    });
-    const agentMessage = resposne.choices[0].message;
-    messages.push(agentMessage);
-    if (!agentMessage.tool_calls) {
-      saveMemory(threadId, messages);
-      return agentMessage.content;
-    }
-    for (let call of agentMessage.tool_calls) {
-      if (call.name === "searchKnowledgeBase") {
-        const { query } = JSON.parse(call.function.arguments);
-        const result = await searchKnowledgeBase(query);
+    try {
+      const resposne = await groq.chat.completions.create({
+        model: "llama-3.3-70b-versatile",
+        messages,
+        tools,
+        tool_choice: "auto",
+        temperature: 0.2,
+      });
 
-        messages.push({
-          role: "tool",
-          tool_call_id: call.id,
-          name: "searchKnowledgeBase",
-          content: result,
-        });
-      } else if (call.name === "webSearch") {
-        const { query } = JSON.parse(call.function.arguments);
-        const result = await webSearch(query);
-
-        messages.push({
-          role: "tool",
-          tool_call_id: call.id,
-          name: "webSearch",
-          content: result,
-        });
+      const agentMessage = resposne.choices[0].message;
+      messages.push(agentMessage);
+      
+      if (agentMessage.content) {
+          console.log(`[Agent] Response: ${agentMessage.content}`);
       }
+  
+      if (!agentMessage.tool_calls || agentMessage.tool_calls.length === 0) {
+        saveMemory(threadId, messages);
+        return agentMessage.content || "I'm sorry, I couldn't generate a response.";
+      }
+  
+      for (let call of agentMessage.tool_calls) {
+        console.log(`[Agent] Calling tool: ${call.name} with args:`, call.function.arguments);
+        
+        if (call.name === "searchKnowledgeBase") {
+          const { query } = JSON.parse(call.function.arguments);
+          const result = await searchKnowledgeBase(query);
+          console.log(`[Agent] Tool ${call.name} returned result length: ${result.length}`);
+  
+          messages.push({
+            role: "tool",
+            tool_call_id: call.id,
+            name: "searchKnowledgeBase",
+            content: result,
+          });
+        } else if (call.name === "webSearch") {
+          const { query } = JSON.parse(call.function.arguments);
+          const result = await webSearch(query);
+          console.log(`[Agent] Tool ${call.name} returned result length: ${result.length}`);
+  
+          messages.push({
+            role: "tool",
+            tool_call_id: call.id,
+            name: "webSearch",
+            content: result,
+          });
+        } else if (call.name === "escalateToHuman") {
+          const { reason } = JSON.parse(call.function.arguments);
+          const result = `Escalation noted. Reason: ${reason}. A human agent has been notified.`;
+          console.log(`[Agent] Tool ${call.name} executed.`);
+  
+          messages.push({
+              role: "tool",
+              tool_call_id: call.id,
+              name: "escalateToHuman",
+              content: result,
+            });
+        }
+      }
+    } catch (error) {
+      console.error("Error in agent loop:", error);
+      return "I encountered an error while processing your request. Please try again later.";
     }
   }
 };
